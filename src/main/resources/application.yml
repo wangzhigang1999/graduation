@@ -1,19 +1,22 @@
 spring:
   redis:
-    host: 39.107.77.0
+    host: localhost
     port: 6379
   datasource:
     username: root
-    password: zhigang911
-    url: jdbc:mysql://cdb-j4qmw9d0.cd.tencentcdb.com:10149/graduation?useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    password: root
+    url: replace
     driver-class-name: com.mysql.cj.jdbc.Driver
+    #Not recommended to modify
     type: com.alibaba.druid.pool.DruidDataSource
     filters: stat, wall
   application:
     name: graduation
   servlet:
     multipart:
+      #Limit the maximum size of a single file upload
       max-file-size: 5MB
+      # Limit the maximum size of a single request
       max-request-size: 10MB
 server:
   port: 8888

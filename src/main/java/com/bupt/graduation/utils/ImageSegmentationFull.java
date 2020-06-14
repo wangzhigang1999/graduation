@@ -21,15 +21,15 @@ public class ImageSegmentationFull {
     /**
      * Baidu的 app id
      */
-    private static final String APP_ID = "19694434";
+    private static final String APP_ID = "replace";
     /**
      * Baidu的app key
      */
-    private static final String API_KEY = "cQHvMSwExlAW1PRGzmsm0zMi";
+    private static final String API_KEY = "replace";
     /**
      * Baidu
      */
-    private static final String SECRET_KEY = "xSXtQpPVNoicOswPQbwl4X2soEi1yXQj";
+    private static final String SECRET_KEY = "replace";
 
     /**
      * 提取的人像的保存目录
