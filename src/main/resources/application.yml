@@ -1,0 +1,24 @@
+spring:
+  redis:
+    host: 39.107.77.0
+    port: 6379
+  datasource:
+    username: root
+    password: zhigang911
+    url: jdbc:mysql://cdb-j4qmw9d0.cd.tencentcdb.com:10149/graduation?useSSL=false&useUnicode=true&characterEncoding=UTF-8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    filters: stat, wall
+  application:
+    name: graduation
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+server:
+  port: 8888
+logging:
+  file:
+    name: graduation.log
+
+
