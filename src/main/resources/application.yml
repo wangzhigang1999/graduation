@@ -25,5 +25,7 @@ server:
 #logging:
 #  file:
 #    name: graduation.log
-http:
-  url: http://localhost:5000/upload
+segService:
+  url: http://localhost:5000/matting
+  upload-path: http://localhost:5000/upload
+  timeout: 60

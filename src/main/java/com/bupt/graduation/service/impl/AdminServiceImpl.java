@@ -231,8 +231,6 @@ public class AdminServiceImpl implements AdminService {
         //数组的索引
         AtomicInteger index = new AtomicInteger();
 
-//        list.forEach((o) -> img[index.getAndIncrement()] = (BASE_DIR + o.getKey()));
-
         list.forEach(o -> {
             UUID uid = UUID.randomUUID();
             String savePath = BASE_DIR + uid + ".jpg";

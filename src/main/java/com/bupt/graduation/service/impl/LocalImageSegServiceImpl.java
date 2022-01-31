@@ -5,6 +5,7 @@ import com.bupt.graduation.utils.ImageSaveUtil;
 import com.google.gson.Gson;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,8 +18,10 @@ import java.util.UUID;
 
 @Service("modnet")
 public class LocalImageSegServiceImpl implements ImageSegService {
-    private static final int DEFAULT_TIME_OUT = 60;
-    private final String URL = "http://localhost:5000/matting";
+    @Value("${segService.timeout}")
+    private int DEFAULT_TIME_OUT;
+    @Value("${segService.url}")
+    private String URL;
 
     @Override
     public String seg(MultipartFile file) throws IOException {
@@ -30,7 +33,7 @@ public class LocalImageSegServiceImpl implements ImageSegService {
             Connection conn = Jsoup.connect(url);
 
             conn.data("file", "file", fis);
-            Connection.Response response = conn.method(Connection.Method.POST).execute();
+            Connection.Response response = conn.method(Connection.Method.POST).timeout(DEFAULT_TIME_OUT).execute();
             return response.body();
         } catch (Exception e) {
             e.printStackTrace();

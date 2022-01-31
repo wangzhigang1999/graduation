@@ -4,6 +4,7 @@ import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -28,7 +29,8 @@ public class ImageSaveUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageSaveUtil.class);
 
-    private static final String UPLOAD_TARGET = "http://localhost:5000/upload";
+    @Value("${segService.upload-path}")
+    private static String UPLOAD_TARGET;
 
 
     static {
@@ -63,7 +65,7 @@ public class ImageSaveUtil {
         return doPostFileRequest(UPLOAD_TARGET, file.getInputStream());
     }
 
-    public static String saveOnline(InputStream file) throws IOException {
+    public static String saveOnline(InputStream file) {
         return doPostFileRequest(UPLOAD_TARGET, file);
     }
 

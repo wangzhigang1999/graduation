@@ -1,7 +1,5 @@
-package com.bupt.graduation.utils; /**
- * @Author DemoRookie
- * @Version 1.0
- */
+package com.bupt.graduation.utils;
+
 
 import java.io.*;
 import java.net.*;
@@ -13,11 +11,6 @@ public class ImageDownLoadUtil {
     public static void downImages(String filePath, String imgUrl) {
         try {
             String fileName = imgUrl.substring(imgUrl.lastIndexOf('/') + 1);//截取图片文件名
-            /*
-             * 文件名里面可能有中文或者空格，所以这里要进行处理，
-             * 但空格又会被URLEncoder转义为加号，
-             * 因此要将加号转化为UTF-8格式的%20
-             * */
             String urlTail = URLEncoder.encode(fileName, "UTF-8");
             imgUrl = imgUrl.substring(0, imgUrl.lastIndexOf('/') + 1) + urlTail.replaceAll("\\+", "\\%20");
         } catch (UnsupportedEncodingException e) {

@@ -3,6 +3,7 @@ package com.bupt.graduation.aspect;
 
 import com.bupt.graduation.annotation.AuthCheck;
 import com.bupt.graduation.entity.Resp;
+import com.bupt.graduation.utils.JsonUtil;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
@@ -15,6 +16,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * @author wangz
@@ -37,12 +39,11 @@ public class LoggerAspect {
 
     @Before("logPointCut()")
     public void beforeLog(JoinPoint joinPoint) {
-//        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-//        assert attributes != null;
-//        HttpServletRequest request = attributes.getRequest();
-//        Map<String, String[]> parameterMap = request.getParameterMap();
-//        logger.info(new Gson().toJson(new RequestPojo(request.getRequestURL().toString(), request.getRemoteAddr(), parameterMap, request.getMethod(), (joinPoint.getSignature().getDeclaringTypeName() + "." + joinPoint.getSignature().getName()), Arrays.toString(joinPoint.getArgs()))));
-//        startTime.set(System.currentTimeMillis());
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        assert attributes != null;
+        HttpServletRequest request = attributes.getRequest();
+        logger.info(JsonUtil.toJson(request));
+        startTime.set(System.currentTimeMillis());
     }
 
     @Around("authPointCut() && @annotation(authCheck)")
@@ -62,8 +63,8 @@ public class LoggerAspect {
 
     @AfterReturning(returning = "object", pointcut = "logPointCut()")
     public void after(Object object) {
-//        logger.info(object.toString());
-//        logger.info("SPEND TIME : " + (System.currentTimeMillis() - startTime.get()));
+        logger.info(JsonUtil.toJson(object));
+        logger.info("SPEND TIME : " + (System.currentTimeMillis() - startTime.get()));
     }
 
 }
