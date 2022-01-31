@@ -1,9 +1,9 @@
 package com.bupt.graduation.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.bupt.graduation.entity.Pair;
 import com.bupt.graduation.entity.Photo;
 import com.bupt.graduation.entity.PhotoUserRelation;
-import javafx.util.Pair;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * (PhotoUserRelation)表数据库访问层
@@ -130,7 +131,7 @@ public interface PhotoUserRelationDao extends BaseMapper<PhotoUserRelation> {
      * @return res
      */
     @Select("select user_final_img , relative_position from photo_user_relation where photo_id =#{uuid}")
-    List<Pair<String, Integer>> getImgAndPositionByUuid(String uuid);
+    List<Pair> getImgAndPositionByUuid(String uuid);
 
 
     /**

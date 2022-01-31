@@ -83,8 +83,13 @@ public class UserController {
     }
 
     @RequestMapping("/getMyPhotoInfoBeforeChangeIt")
-    public Object getMyPhotoInfoBeforeChangeIt(String uuid,String openId){
+    public Object getMyPhotoInfoBeforeChangeIt(String uuid, String openId) {
         return userService.getMyPhotoInfoBeforeChangeIt(uuid, openId);
+    }
+
+    @RequestMapping("/isJoined")
+    public Object isJoined(String uuid, String openId) {
+        return userService.isJoined(uuid, openId);
     }
 
 }

@@ -6,11 +6,15 @@ import com.bupt.graduation.dao.PhotoUserRelationDao;
 import com.bupt.graduation.entity.Photo;
 import com.bupt.graduation.entity.PhotoUserRelation;
 import com.bupt.graduation.entity.Resp;
+import com.bupt.graduation.service.ImageSegService;
+import com.bupt.graduation.service.ImageUploadService;
 import com.bupt.graduation.service.UserService;
 import com.bupt.graduation.utils.ImageSaveUtil;
 import com.bupt.graduation.utils.ImageSegmentationFull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +35,11 @@ public class UserServiceImpl implements UserService {
 
     private final PhotoUserRelationDao relationDao;
     private final PhotoDao photoDao;
+
+    @Autowired
+    @Qualifier("modnet")
+    ImageSegService segService;
+
     private final RedisTemplate<String, String> redisTemplate;
     private final static Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 
@@ -123,8 +132,8 @@ public class UserServiceImpl implements UserService {
     private void processCurrentUser(String openId, List<Photo> photos, List<HashMap<String, Object>> admin, List<HashMap<String, Object>> joined) {
         photos.parallelStream().forEach(photo -> {
 
-            photo.setBackgroundImg("/graduation/" + photo.getBackgroundImg());
-            photo.setFinalImg("/graduation/" + photo.getFinalImg());
+            photo.setBackgroundImg(photo.getBackgroundImg());
+            photo.setFinalImg(photo.getFinalImg());
 
             // 获取当前合照加入的人数
             String confirm = redisTemplate.opsForValue().get(photo.getPhotoId() + CONFIRMED_CNT);
@@ -281,52 +290,40 @@ public class UserServiceImpl implements UserService {
             return new Resp(false, 200, "Currently users are not allowed to modify personal information", null);
         }
 
-
-        //生成一个文件名称存储
-        String fileName = UUID.randomUUID().toString();
-
-        // 把用户上传的图片保存到本地,提交任务到线程池,此处不阻塞
-        ImageSaveUtil.add(file, fileName);
-
         String imgUrl;
 
         try {
-            // 尝试使用 Baidu api 提取人像
-            imgUrl = ImageSegmentationFull.getImgUrl(file.getBytes());
-
+            imgUrl = segService.seg(file);
             // 提取失败
             if (imgUrl == null) {
-                throw new Exception("Baidu API exception");
+                throw new Exception("seg exception");
             }
         } catch (Exception e) {
-            logger.error("An exception occurred in Baidu API uuid = {} openId = {} fileName = {}", uuid, openId, fileName);
+            logger.error("An exception occurred in SEG API uuid = {} openId = {}", uuid, openId);
             return new Resp(false, 200, "Baidu API exception", null);
 
         }
 
 
         try {
-            // 用户信息上传,将用户本地的图片和Baidu获得的人像同时存储到数据库中
-            Integer res = relationDao.uploadImage(uuid, openId, fileName + ".jpeg", imgUrl);
+            // 用户信息上传,将用户本地的图片和SEG人像同时存储到数据库中
+            Integer res = relationDao.uploadImage(uuid, openId, "", imgUrl);
 
             if (res == 1) {
                 HashMap<String, String> map = new HashMap<>(1);
-                map.put("url", "/graduation/" + imgUrl);
-
-                // 把两个图片文件的名称临时存储到 redis 中,便于将来的删除
-                redisTemplate.opsForSet().add(uuid, fileName + ".jpeg", imgUrl);
-
+                map.put("url", imgUrl);
                 return new Resp("success", map);
             } else {
                 throw new Exception("");
             }
         } catch (Exception e) {
-            logger.error("Failed to write the image address to the database uuid = {} openId = {} fileName = {}", uuid, openId, fileName);
+            logger.error("Failed to write the image address to the database uuid = {} openId = {} ", uuid, openId);
             return new Resp(false, 200, "Failed to write the image address to the database", null);
 
         }
 
     }
+
 
     @Override
     public Object changeImage(String uuid, String openId, MultipartFile file) {
@@ -343,13 +340,19 @@ public class UserServiceImpl implements UserService {
             return new Resp(false, 200, "Group photo does not exist", null);
         }
 
-        relation.setUserFinalImg("/graduation/" + relation.getUserFinalImg());
-        relation.setUserTempImg("/graduation/" + relation.getUserTempImg());
-        relation.setUserUploadedImg("/graduation/" + relation.getUserUploadedImg());
+        relation.setUserFinalImg(relation.getUserFinalImg());
+        relation.setUserTempImg(relation.getUserTempImg());
+        relation.setUserUploadedImg(relation.getUserUploadedImg());
 
 
         return new Resp(true, 200, "success", relation);
 
+    }
+
+    @Override
+    public Object isJoined(String uuid, String openId) {
+        Boolean isMember = redisTemplate.opsForSet().isMember(uuid + JOINED_SET, openId);
+        return new Resp(true, 200, "success", true);
     }
 
     @Override
@@ -362,17 +365,14 @@ public class UserServiceImpl implements UserService {
         String name = UUID.randomUUID().toString();
         try {
 
-            ImageSaveUtil.add(file, name);
+            String finalUrl = ImageSaveUtil.saveOnline(file);
 
-            Integer res = relationDao.uploadFinalImage(uuid, openId, name + ".jpeg");
+            Integer res = relationDao.uploadFinalImage(uuid, openId, finalUrl);
 
             // 在集合中添加数据,注意如果是修改的话返回值会为0
             redisTemplate.opsForSet().add(uuid + UPLOADED_SET, openId);
 
             if (res == 1) {
-                // 继续将这个文件名保存到 redis ,未来删除
-                redisTemplate.opsForSet().add(uuid, name + ".jpeg");
-
                 return new Resp("success", null);
             } else {
                 throw new Exception("");
@@ -411,13 +411,13 @@ public class UserServiceImpl implements UserService {
                         return new Resp(false, 200, "making ...", null);
                     } else {
                         redisTemplate.opsForValue().set(uuid + FINAL_IMG, photoLink);
-                        return new Resp(true, 200, "success", "/graduation/" + photoLink);
+                        return new Resp(true, 200, "success", photoLink);
                     }
 
                 }
 
             } else {
-                return new Resp(true, 200, "success", "/graduation/" + photoLink);
+                return new Resp(true, 200, "success", photoLink);
             }
 
         } catch (Exception e) {
@@ -456,15 +456,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Object joinSomeOne(String openId, String uuid) {
+    public Resp joinSomeOne(String openId, String uuid) {
         try {
-            //检查一下这个 uuid 是否存在
-            Long id = photoDao.getIdByUuid(uuid);
-
-            // 没有查出来
-            if (id == null) {
-                return new Resp(false, 200, "Group photo does not exist", null);
-            }
 
             Boolean isMember = redisTemplate.opsForSet().isMember(uuid + JOINED_SET, openId);
 
@@ -494,7 +487,6 @@ public class UserServiceImpl implements UserService {
             }
         } catch (Exception e) {
             logger.error("An error occurred while adding a relationship. openId = {} uuid = {}", openId, uuid);
-
             return new Resp(false, 200, "", null);
 
         }

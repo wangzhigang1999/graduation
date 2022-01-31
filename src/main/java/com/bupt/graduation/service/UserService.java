@@ -1,5 +1,6 @@
 package com.bupt.graduation.service;
 
+import com.bupt.graduation.annotation.ExistCheck;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -49,6 +50,7 @@ public interface UserService {
      * @param name    name
      * @return res
      */
+    @ExistCheck
     Object addBasicInfo(String uuid, String openId, String remarks, String name);
 
 
@@ -111,12 +113,22 @@ public interface UserService {
 
 
     /**
-     *在修改之前获取信息
+     * 在修改之前获取信息
      *
-     * @param uuid uuid
+     * @param uuid   uuid
      * @param openId openId
      * @return res
      */
     Object getMyPhotoInfoBeforeChangeIt(String uuid, String openId);
+
+
+    /**
+     * 判断一个人是否已经加入了合照
+     *
+     * @param uuid   uuid
+     * @param openId openid
+     * @return res
+     */
+    Object isJoined(String uuid, String openId);
 
 }

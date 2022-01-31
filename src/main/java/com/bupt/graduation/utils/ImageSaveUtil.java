@@ -1,10 +1,13 @@
 package com.bupt.graduation.utils;
 
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,26 +28,21 @@ public class ImageSaveUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageSaveUtil.class);
 
+    private static final String UPLOAD_TARGET = "http://localhost:5000/upload";
+
 
     static {
         MakeDirUtil.mkDir(BG_PATH);
     }
 
-    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(
-            1,
-            Runtime.getRuntime().availableProcessors() * 2,
-            30,
-            TimeUnit.SECONDS,
-            new LinkedBlockingDeque<>(),
-            Executors.defaultThreadFactory(),
-            new ThreadPoolExecutor.CallerRunsPolicy());
+    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(1, Runtime.getRuntime().availableProcessors() * 2, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), Executors.defaultThreadFactory(), new ThreadPoolExecutor.CallerRunsPolicy());
 
     public static void add(MultipartFile file, String fileName) {
         logger.info("Submit tasks to the thread pool");
         POOL_EXECUTOR.execute(() -> save(file, fileName));
     }
 
-    private static void save(MultipartFile file, String fileName) {
+    public static boolean save(MultipartFile file, String fileName) {
         try {
 
             logger.info("Start dumping files");
@@ -55,6 +53,32 @@ public class ImageSaveUtil {
 
         } catch (IOException e) {
             logger.error("Dump file failed!");
+
+            return false;
         }
+        return true;
+    }
+
+    public static String saveOnline(MultipartFile file) throws IOException {
+        return doPostFileRequest(UPLOAD_TARGET, file.getInputStream());
+    }
+
+    public static String saveOnline(InputStream file) throws IOException {
+        return doPostFileRequest(UPLOAD_TARGET, file);
+    }
+
+    private static String doPostFileRequest(String url, InputStream fis) {
+        try {
+            Connection conn = Jsoup.connect(url);
+
+            conn.data("file", "file", fis);
+            Connection.Response response = conn.method(Connection.Method.POST).execute();
+
+            return response.body();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+
     }
 }

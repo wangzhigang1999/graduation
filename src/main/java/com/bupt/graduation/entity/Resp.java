@@ -1,6 +1,5 @@
 package com.bupt.graduation.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +10,6 @@ import java.io.Serializable;
  *
  * @author wangz
  */
-@AllArgsConstructor
 @NoArgsConstructor
 @Data
 public class Resp implements Serializable {
@@ -23,5 +21,23 @@ public class Resp implements Serializable {
     public Resp(String msg, Object data) {
         this.data = data;
         this.msg = msg;
+    }
+
+    public Resp(int code, String msg, Object data) {
+        this.data = data;
+        this.code = code;
+        this.msg = msg;
+    }
+
+    public Resp(int code, String msg) {
+        this.code = code;
+        this.msg = msg;
+    }
+
+    public Resp(boolean success, Integer code, String msg, Object data) {
+        this.success = success;
+        this.code = code;
+        this.msg = msg;
+        this.data = data;
     }
 }

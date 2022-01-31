@@ -39,12 +39,8 @@ public interface PhotoDao extends BaseMapper<Photo> {
      * @param otherInfo     其他的一些信息
      * @return res
      */
-
-    @Insert("insert into graduation.photo (photo_id, school_name, class_number, student_number,\n" +
-            "                              image_name, creator_open_id, create_date, other_info)\n" +
-            "VALUES (#{uuid}, #{schoolName}, #{className}, #{studentNumber}, #{imgName}, #{openId}, now(), #{otherInfo})")
-    Integer createBasicInfo(String uuid, String imgName, String schoolName, String className,
-                            Integer studentNumber, String otherInfo, String openId);
+    @Insert("insert into graduation.photo (photo_id, school_name, class_number, student_number,\n" + "                              image_name, creator_open_id, create_date, other_info)\n" + "VALUES (#{uuid}, #{schoolName}, #{className}, #{studentNumber}, #{imgName}, #{openId}, now(), #{otherInfo})")
+    Integer createBasicInfo(String uuid, String imgName, String schoolName, String className, Integer studentNumber, String otherInfo, String openId);
 
     /**
      * 用于改变合照的信息
@@ -56,14 +52,8 @@ public interface PhotoDao extends BaseMapper<Photo> {
      * @param otherInfo  其他的一些信息
      * @return res
      */
-    @Update("update graduation.photo\n" +
-            "set image_name=#{imgName},\n" +
-            "    school_name=#{schoolName},\n" +
-            "    class_number=#{className},\n" +
-            "    other_info=#{otherInfo}\n" +
-            "where photo_id = #{uuid}")
-    Integer changeBasicInfo(String uuid, String imgName, String schoolName, String className,
-                            String otherInfo);
+    @Update("update graduation.photo\n" + "set image_name=#{imgName},\n" + "    school_name=#{schoolName},\n" + "    class_number=#{className},\n" + "    other_info=#{otherInfo}\n" + "where photo_id = #{uuid}")
+    Integer changeBasicInfo(String uuid, String imgName, String schoolName, String className, String otherInfo);
 
 
     /**
@@ -98,9 +88,7 @@ public interface PhotoDao extends BaseMapper<Photo> {
     Integer changeStatus(String uuid, Integer status);
 
 
-    @Update("update graduation.photo set " +
-            "status=#{status} ," +
-            "final_img=#{img} where photo_id=#{uuid}")
+    @Update("update graduation.photo set " + "status=#{status} ," + "final_img=#{img} where photo_id=#{uuid}")
     Integer releaseConfirm(String uuid, Integer status, String img);
 
 

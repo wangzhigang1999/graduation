@@ -3,11 +3,11 @@ package com.bupt.graduation.utils;
 import com.bupt.graduation.entity.WidthAndHeight;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.*;
 import java.util.HashMap;
-import java.util.UUID;
 
 /**
  * 图像合成工具类
@@ -48,9 +48,6 @@ public class ImageCompositingUtil {
             }
 
 
-            // 随机的生成一个文件名
-            String fileName = UUID.randomUUID().toString();
-
             WidthAndHeight bgSize = BACKGROUND_MAP.get(length);
 
             // 创建透明的背景
@@ -75,14 +72,11 @@ public class ImageCompositingUtil {
             for (BufferedImage image : images) {
                 graphics2D.drawImage(image, x, y, 288, 600, null);
                 x += 170;
-
             }
 
             graphics2D.dispose();
 
-            ImageIO.write(background, "PNG", new File(PATH + "/" + fileName + ".png"));
-
-            return fileName + ".png";
+            return ImageSaveUtil.saveOnline(getImageStream(background));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -112,6 +106,20 @@ public class ImageCompositingUtil {
         BACKGROUND_MAP.put(4, new WidthAndHeight(798, 600));
         BACKGROUND_MAP.put(5, new WidthAndHeight(968, 600));
 
+    }
+
+    private static InputStream getImageStream(BufferedImage image) {
+        InputStream stream = null;
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+        ImageOutputStream imOut;
+        try {
+            imOut = ImageIO.createImageOutputStream(bs);
+            ImageIO.write(image, "png", imOut);
+            stream = new ByteArrayInputStream(bs.toByteArray());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return stream;
     }
 
 }

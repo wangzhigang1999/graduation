@@ -2,14 +2,18 @@ package com.bupt.graduation.service.impl;
 
 import com.bupt.graduation.dao.PhotoDao;
 import com.bupt.graduation.dao.PhotoUserRelationDao;
+import com.bupt.graduation.entity.Pair;
 import com.bupt.graduation.entity.Resp;
 import com.bupt.graduation.service.AdminService;
+import com.bupt.graduation.service.ImageUploadService;
 import com.bupt.graduation.service.UserService;
+import com.bupt.graduation.utils.CommonQueryUtil;
 import com.bupt.graduation.utils.ImageCompositingUtil;
 import com.bupt.graduation.utils.ImageDeleteUtil;
-import com.bupt.graduation.utils.ImageSaveUtil;
+import com.bupt.graduation.utils.ImageDownLoadUtil;
 import com.google.gson.Gson;
-import javafx.util.Pair;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,6 +35,12 @@ public class AdminServiceImpl implements AdminService {
     final PhotoDao photoDao;
     final PhotoUserRelationDao relationDao;
     final UserService userService;
+    @Qualifier("remote")
+    @Autowired
+    ImageUploadService uploadService;
+
+    @Autowired
+    CommonQueryUtil commonQueryUtil;
 
 
     /**
@@ -77,15 +87,17 @@ public class AdminServiceImpl implements AdminService {
      * @return res
      */
     @Override
-    public Object createBasicInfo(String uuid, String imgName, String schoolName, String className,
-                                  String studentNumber, String otherInfo, String openId) {
+    public Object createBasicInfo(String uuid, String imgName, String schoolName, String className, String studentNumber, String otherInfo, String openId) {
 
 
         try {
             Integer res = photoDao.createBasicInfo(uuid, imgName, schoolName, className, Integer.parseInt(studentNumber), otherInfo, openId);
             if (res == 1) {
                 // 关联管理员与 photo
-                userService.joinSomeOne(openId, uuid);
+                Resp o = (Resp) userService.joinSomeOne(openId, uuid);
+                if (!o.isSuccess()) {
+                    throw new Exception("");
+                }
 
                 // 在redis中缓存合照的所有人数,以便将来判断是否所有人都加入完成了
                 redisTemplate.opsForValue().set(uuid + TOTAL_NUMBER_OF_PEOPLE, studentNumber);
@@ -95,6 +107,7 @@ public class AdminServiceImpl implements AdminService {
                 throw new Exception("");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             return new Resp(false, 200, "Creation failed", null);
         }
 
@@ -113,7 +126,7 @@ public class AdminServiceImpl implements AdminService {
 
         try {
             // 判断一下是否存在
-            if (notExist(uuid)) {
+            if (commonQueryUtil.notExist(uuid)) {
                 return new Resp(false, 200, "Group photo does not exist", null);
             }
             // 开始修改
@@ -162,7 +175,7 @@ public class AdminServiceImpl implements AdminService {
 
         if (finalOrder.length > 0) {
             for (int i = 0; i < finalOrder.length; i++) {
-                changePeopleOrder(uuid, finalOrder[i], String.valueOf(i));
+                changePeopleOrder(uuid, finalOrder[i], i);
             }
         }
 
@@ -172,37 +185,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public Object uploadBackgroundImg(String uuid, MultipartFile file) {
-
-        try {
-
-            if (file == null) {
-                throw new NullPointerException("The uploaded file is empty, please check and try again!");
-            }
-
-            if (notExist(uuid)) {
-                return new Resp(false, 200, "Group photo does not exist", null);
-            }
-
-
-            // 给文件生成一个名称,这个文件是不会被删除的,因此不将它添加到 redis 中
-            String fileName = UUID.randomUUID().toString();
-
-
-            // 提交到线程池中
-            ImageSaveUtil.add(file, fileName);
-
-            // 修改数据库数据
-            Integer res = photoDao.uploadBackgroundImg(uuid, fileName + ".jpeg");
-
-            if (res == 1) {
-                return new Resp(true, 200, "success", null);
-            } else {
-                throw new Exception("");
-            }
-        } catch (Exception e) {
-            return new Resp(false, 200, "Failed to upload background!", null);
-        }
-
+        return uploadService.upload(uuid, file);
     }
 
 
@@ -211,9 +194,8 @@ public class AdminServiceImpl implements AdminService {
         return uploadBackgroundImg(uuid, file);
     }
 
-    @Override
-    public void changePeopleOrder(String uuid, String openId, String position) {
-        relationDao.changePeopleOrder(uuid, openId, Integer.parseInt(position));
+    public void changePeopleOrder(String uuid, String openId, int position) {
+        relationDao.changePeopleOrder(uuid, openId, position);
     }
 
     /**
@@ -229,11 +211,11 @@ public class AdminServiceImpl implements AdminService {
 
         }
         // 获取所有的人像的链接
-        List<Pair<String, Integer>> list = relationDao.getImgAndPositionByUuid(uuid);
+        List<Pair> list = relationDao.getImgAndPositionByUuid(uuid);
         // 对这些人进行排序
         assert list != null;
 
-        for (Pair<String, Integer> pair : list) {
+        for (Pair pair : list) {
             if (pair == null || pair.getKey() == null || pair.getValue() == null) {
                 return new Resp(false, 200, "Please wait for everyone to join and sort", null);
             }
@@ -242,14 +224,21 @@ public class AdminServiceImpl implements AdminService {
 
         list.sort(Comparator.comparingInt(Pair::getValue));
 
+
         // 将排好顺序的人的图片链接写入一个数组中
         String[] img = new String[list.size()];
 
         //数组的索引
         AtomicInteger index = new AtomicInteger();
 
-        list.forEach((o) -> img[index.getAndIncrement()] = (BASE_DIR + o.getKey()));
+//        list.forEach((o) -> img[index.getAndIncrement()] = (BASE_DIR + o.getKey()));
 
+        list.forEach(o -> {
+            UUID uid = UUID.randomUUID();
+            String savePath = BASE_DIR + uid + ".jpg";
+            ImageDownLoadUtil.downImages(savePath, o.getKey());
+            img[index.getAndIncrement()] = (savePath);
+        });
         // 开始拼接
         try {
 
@@ -263,7 +252,7 @@ public class AdminServiceImpl implements AdminService {
                 photoDao.releaseConfirm(uuid, CONFIRMED_FOR_RELEASE, imageLink);
 
 
-                return new Resp(true, 200, "success", "/graduation/" + imageLink);
+                return new Resp(true, 200, "success", imageLink);
             }
 
         } catch (Exception e) {
@@ -277,13 +266,7 @@ public class AdminServiceImpl implements AdminService {
         try {
 
             String res = redisTemplate.opsForValue().get(uuid + UserServiceImpl.CONFIRMED_CNT);
-
-            if (res == null) {
-                throw new NullPointerException();
-            } else {
-                return new Resp(true, 200, "success", res);
-            }
-
+            return res == null ? new Resp(true, 200, "success", "0") : new Resp(true, 200, "success", res);
         } catch (Exception e) {
             return new Resp(false, 200, "Failed to get the number of people joined!", null);
         }
@@ -319,9 +302,6 @@ public class AdminServiceImpl implements AdminService {
 
     }
 
-    private boolean notExist(String uuid) {
-        Long idByUuid = photoDao.getIdByUuid(uuid);
-        return idByUuid == null;
-    }
+
 }
 

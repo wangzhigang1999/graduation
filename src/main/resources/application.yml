@@ -1,27 +1,29 @@
 spring:
+  application:
+    name: graduation
+  cloud:
+    kubernetes:
+      config:
+        name: graduation-config-map
   redis:
     host: localhost
     port: 6379
   datasource:
     username: root
     password: root
-    url: replace
+    url: jdbc:mysql://127.0.0.1:3306/graduation?useSSL=false&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-    #Not recommended to modify
-    type: com.alibaba.druid.pool.DruidDataSource
-    filters: stat, wall
-  application:
-    name: graduation
+    type: com.mysql.cj.jdbc.MysqlConnectionPoolDataSource
+  aop:
+    proxy-target-class: true
   servlet:
     multipart:
-      #Limit the maximum size of a single file upload
       max-file-size: 5MB
-      # Limit the maximum size of a single request
       max-request-size: 10MB
 server:
   port: 8888
-logging:
-  file:
-    name: graduation.log
-
-
+#logging:
+#  file:
+#    name: graduation.log
+http:
+  url: http://localhost:5000/upload
