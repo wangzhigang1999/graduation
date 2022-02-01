@@ -1,0 +1,40 @@
+apiVersion: apps/v1 # apiserver的版本
+kind: Deployment # 副本控制器deployment，管理pod和RS
+metadata:
+  name: mysql # deployment的名称，全局唯一
+spec:
+  replicas: 1 # Pod副本期待数量
+  selector:
+    matchLabels: # 定义RS的标签
+      app: mysql
+  template: # 根据此模板创建Pod的副本（实例）
+    metadata:
+      labels:
+        app: mysql # Pod副本的标签，对应RS的Selector
+    spec:
+      containers: # Pod里容器的定义部分
+        - name: mysql # 容器的名称
+          image: mysql:8.0.28 # 容器对应的docker镜像
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+
+          ports:
+            - containerPort: 3306 # 容器暴露的端口号
+          env: # 写入到容器内的环境容量
+            - name: MYSQL_ROOT_PASSWORD # 定义了一个mysql的root密码的变量
+              value: "root"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  ports:
+    - port: 3306
+      targetPort: 3306
+  selector:
+    app: mysql

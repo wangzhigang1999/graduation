@@ -1,7 +1,5 @@
 package com.bupt.graduation.entity;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
@@ -10,13 +8,22 @@ import java.io.Serializable;
  *
  * @author wangz
  */
-@NoArgsConstructor
-@Data
+
 public class Resp implements Serializable {
     private boolean success = true;
     private Integer code = 200;
     private String msg;
     private Object data;
+
+    @Override
+    public String toString() {
+        return "Resp{" +
+                "success=" + success +
+                ", code=" + code +
+                ", msg='" + msg + '\'' +
+                ", data=" + data +
+                '}';
+    }
 
     public Resp(String msg, Object data) {
         this.data = data;
@@ -39,5 +46,40 @@ public class Resp implements Serializable {
         this.code = code;
         this.msg = msg;
         this.data = data;
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+
+    public String getMsg() {
+        return msg;
+    }
+
+    public void setMsg(String msg) {
+        this.msg = msg;
+    }
+
+    public Object getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data;
+    }
+
+    public Resp() {
     }
 }

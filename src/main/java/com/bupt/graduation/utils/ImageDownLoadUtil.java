@@ -1,42 +1,32 @@
 package com.bupt.graduation.utils;
 
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.*;
 import java.net.*;
 
 
+/**
+ * @author wangzhigang
+ */
 public class ImageDownLoadUtil {
-
-
     public static void downImages(String filePath, String imgUrl) {
         try {
-            String fileName = imgUrl.substring(imgUrl.lastIndexOf('/') + 1);//截取图片文件名
-            String urlTail = URLEncoder.encode(fileName, "UTF-8");
-            imgUrl = imgUrl.substring(0, imgUrl.lastIndexOf('/') + 1) + urlTail.replaceAll("\\+", "\\%20");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            File file = new File(filePath);
+            URL url = new URL(imgUrl);
+            FileUtils.copyURLToFile(url, file);
+        } catch (Exception ignore) {
         }
 
-        File file = new File(filePath);//写出路径
-        InputStream inStream;
+    }
 
-        try {
-            URL url = new URL(imgUrl);// 构造URL
-            URLConnection con = url.openConnection();// 打开连接
-            inStream = con.getInputStream();
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();//中转站，现将图片数据放到outStream中
-            byte[] buf = new byte[1024];
-            int len;
-            while ((len = inStream.read(buf)) != -1) {
-                outStream.write(buf, 0, len);
-            }
-            inStream.close();
-            outStream.close();
-            FileOutputStream op = new FileOutputStream(file);//图片下载的位置
-            op.write(outStream.toByteArray());
-            op.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            long start = System.currentTimeMillis();
+            downImages("./test.jpg", "https://www.bupt.site/image/1643708811.5312743.jpg");
+            System.out.println(System.currentTimeMillis() - start);
         }
+
     }
 }

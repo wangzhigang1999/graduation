@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graduation-backend
+spec:
+  selector:
+    matchLabels:
+      app: graduation-backend
+  template:
+    metadata:
+      labels:
+        app: graduation-backend
+    spec:
+      containers:
+        - name: modnet
+          image: bupt2018/graduation-backend:8.0
+          resources:
+            limits:
+              memory: "1024Mi"
+              cpu: "500m"
+          ports:
+            - containerPort: 8888
+          env:
+            - name: "MYSQL_USERNAME"
+              value: "root"
+            - name: "MYSQL_PASSWORD"
+              value: "root"
+            - name: "MYSQL_DATABASE"
+              value: "graduation"
+            - name: "HTTP_UPLOAD_PATH"
+              value: "https://www.bupt.site/upload"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graduation-backend-service
+spec:
+  selector:
+    app: graduation-backend
+  ports:
+    - port: 8888
+      targetPort: 8888

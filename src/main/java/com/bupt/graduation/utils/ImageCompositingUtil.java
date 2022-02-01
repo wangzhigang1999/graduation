@@ -76,7 +76,7 @@ public class ImageCompositingUtil {
 
             graphics2D.dispose();
 
-            return ImageSaveUtil.saveOnline(getImageStream(background));
+            return ImageUploadUtil.saveOnline(getImageStream(background));
         } catch (Exception e) {
             e.printStackTrace();
             return null;

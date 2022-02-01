@@ -68,16 +68,6 @@ public interface PhotoDao extends BaseMapper<Photo> {
 
 
     /**
-     * 根据 uuid 来获得 id ,以此来判断一个记录是否存在
-     *
-     * @param uuid uuid
-     * @return res
-     */
-    @Select("select id from graduation.photo where photo_id=#{uuid}")
-    Long getIdByUuid(String uuid);
-
-
-    /**
      * 改变合照的状态
      *
      * @param uuid   uuid
@@ -89,9 +79,12 @@ public interface PhotoDao extends BaseMapper<Photo> {
 
 
     @Update("update graduation.photo set " + "status=#{status} ," + "final_img=#{img} where photo_id=#{uuid}")
-    Integer releaseConfirm(String uuid, Integer status, String img);
+    void releaseConfirm(String uuid, Integer status, String img);
 
 
     @Select("select  status from graduation.photo where photo_id=#{uuid}")
     Integer getStatus(String uuid);
+
+    @Select("select COUNT(*)  graduation.photo where photo_id=#{uuid}")
+    Integer getCount(String uuid);
 }

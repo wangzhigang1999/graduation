@@ -25,5 +25,11 @@ public class Pair {
         this.value = value;
     }
 
-
+    @Override
+    public String toString() {
+        return "Pair{" +
+                "key='" + key + '\'' +
+                ", value=" + value +
+                '}';
+    }
 }

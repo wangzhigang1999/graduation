@@ -118,8 +118,7 @@ public interface AdminService {
      *
      * @param uuid uuid
      * @return res
-     * @throws IOException io异常
      */
     @ExistCheck
-    Object releaseConfirm(String uuid) throws IOException;
+    Object releaseConfirm(String uuid);
 }

@@ -1,18 +1,38 @@
 package com.bupt.graduation.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.Accessors;
-
 /**
  * @author wangz
  */
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
-@Accessors
 public class WidthAndHeight {
     private int width;
     private int height;
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    @Override
+    public String toString() {
+        return "WidthAndHeight{" +
+                "width=" + width +
+                ", height=" + height +
+                '}';
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public WidthAndHeight(int width, int height) {
+        this.width = width;
+        this.height = height;
+    }
 }

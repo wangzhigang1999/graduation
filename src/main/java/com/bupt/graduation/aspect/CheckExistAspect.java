@@ -6,8 +6,12 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 /**
  * @author wangz
@@ -15,27 +19,32 @@ import org.springframework.stereotype.Component;
 @Component
 @Aspect
 public class CheckExistAspect {
-    @Autowired
-    PhotoDao photos;
+    final PhotoDao photos;
+
+    public CheckExistAspect(PhotoDao photos) {
+        this.photos = photos;
+    }
 
     @Pointcut("@annotation(com.bupt.graduation.annotation.ExistCheck)")
-    public void authPointCut() {
+    public void existsCheck() {
     }
 
 
-    @Around("authPointCut()")
-    public Object beforeLog(ProceedingJoinPoint joinPoint) {
-//        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-//        assert attributes != null;
-//        HttpServletRequest request = attributes.getRequest();
-//        Map<String, String[]> parameterMap = request.getParameterMap();
-//        String uuid = parameterMap.get("uuid")[0];
-        try {
-//            photos.getIdByUuid(uuid);
-            return joinPoint.proceed();
-        } catch (Throwable e) {
+    @Around("existsCheck()")
+    public Object beforeLog(ProceedingJoinPoint joinPoint) throws Throwable {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        assert attributes != null;
+        HttpServletRequest request = attributes.getRequest();
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        String uuid = parameterMap.get("uuid")[0];
+
+        // 去查对应的合照，不存在会抛出异常
+        Integer count = photos.getCount(uuid);
+        if (count <= 0) {
             return new Resp(false, 200, "the photo does not exists.", null);
         }
+        return joinPoint.proceed();
+
 
     }
 

@@ -7,22 +7,19 @@ import com.bupt.graduation.entity.Photo;
 import com.bupt.graduation.entity.PhotoUserRelation;
 import com.bupt.graduation.entity.Resp;
 import com.bupt.graduation.service.ImageSegService;
-import com.bupt.graduation.service.ImageUploadService;
 import com.bupt.graduation.service.UserService;
-import com.bupt.graduation.utils.ImageSaveUtil;
-import com.bupt.graduation.utils.ImageSegmentationFull;
+import com.bupt.graduation.utils.ImageUploadUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * (User)表服务实现类
@@ -36,9 +33,7 @@ public class UserServiceImpl implements UserService {
     private final PhotoUserRelationDao relationDao;
     private final PhotoDao photoDao;
 
-    @Autowired
-    @Qualifier("modnet")
-    ImageSegService segService;
+    final ImageSegService segService;
 
     private final RedisTemplate<String, String> redisTemplate;
     private final static Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -79,10 +74,11 @@ public class UserServiceImpl implements UserService {
     final static String UPLOADED_SET = "_UPLOADED_SET";
     final static String JOINED_SET = "_JOINED_SET";
 
-    public UserServiceImpl(PhotoUserRelationDao relationDao, PhotoDao photoDao, RedisTemplate<String, String> redisTemplate) {
+    public UserServiceImpl(PhotoUserRelationDao relationDao, PhotoDao photoDao, RedisTemplate<String, String> redisTemplate, @Qualifier("modnet") ImageSegService segService) {
         this.relationDao = relationDao;
         this.photoDao = photoDao;
         this.redisTemplate = redisTemplate;
+        this.segService = segService;
     }
 
     /**
@@ -93,32 +89,28 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public Object getMyPhotoInfo(String openId) {
-        try {
-            // 从数据库中查一下这个人的数据
-            List<Photo> photos = relationDao.getUserPhotosByOpenId(openId);
 
-            // 为null ,必然发生了错误
-            if (photos == null) {
-                throw new NullPointerException("Current user's information does not exist");
-            } else {
-                HashMap<Object, Object> adminAndUser = new HashMap<>(2);
+        // 从数据库中查一下这个人的数据
+        List<Photo> photos = relationDao.getUserPhotosByOpenId(openId);
 
-                List<HashMap<String, Object>> admin = new LinkedList<>();
-                List<HashMap<String, Object>> user = new LinkedList<>();
-
-                // 对当前用户名下的所有合照进行分析统计
-                processCurrentUser(openId, photos, admin, user);
-
-                adminAndUser.put(ADMINISTRATOR, admin);
-                adminAndUser.put(JOINED, user);
-
-                return new Resp("success", adminAndUser);
-            }
-        } catch (Exception e) {
-            logger.error("An error occurred while obtaining personal information openId = {}, " +
-                    "the user may not exist!", openId);
+        // 为null ,必然发生了错误
+        if (photos == null) {
             return new Resp(false, 200, "Current user's information does not exist", null);
+        } else {
+            HashMap<Object, Object> adminAndUser = new HashMap<>(2);
+
+            List<HashMap<String, Object>> admin = new LinkedList<>();
+            List<HashMap<String, Object>> user = new LinkedList<>();
+
+            // 对当前用户名下的所有合照进行分析统计
+            processCurrentUser(openId, photos, admin, user);
+
+            adminAndUser.put(ADMINISTRATOR, admin);
+            adminAndUser.put(JOINED, user);
+
+            return new Resp("success", adminAndUser);
         }
+
     }
 
     /**
@@ -190,92 +182,74 @@ public class UserServiceImpl implements UserService {
     @Override
     public Object confirmUpload(String uuid, String openId) {
 
-        try {
 
-            // 先检查一下用户是否已经确认了,已经确认过则不进行操作
-            Boolean isMember = redisTemplate.opsForSet().isMember(uuid + CONFIRMED_SET, openId);
-            assert isMember != null;
-            if (isMember) {
-                return new Resp("success", null);
-            }
-
-            // 判断是否一应有了必备的信息
-            String relation = relationDao.getFinalImage(uuid, openId);
-            if (relation == null) {
-                return new Resp(false, 200, "Can't confirm yet", null);
-            }
-            // 修改数据库,返回修改成功的数据条数
-            Integer confirmStatus = relationDao.confirmStatus(uuid, openId);
-
-            if (confirmStatus == 1) {
-                // 在 redis 中将对应的值加一
-                Long confirmed = redisTemplate.opsForValue().increment(uuid + CONFIRMED_CNT);
-
-                String total = redisTemplate.opsForValue().get(uuid + AdminServiceImpl.TOTAL_NUMBER_OF_PEOPLE);
-
-
-                // 判断一下是不是所有人都加入了,是的话就更新一下数据库中的状态
-                assert confirmed != null;
-                assert total != null;
-                if (confirmed.equals(Long.parseLong(total))) {
-                    photoDao.changeStatus(uuid, AdminServiceImpl.CONFIRMED_FOR_RELEASE);
-                }
-                // 把这个用户添加到已确认的集合中去
-                redisTemplate.opsForSet().add(uuid + CONFIRMED_SET, openId);
-                return new Resp("success", null);
-            } else {
-                throw new Exception("");
-            }
-        } catch (Exception e) {
-            logger.error("An error occurred during confirmation openId = {} uuid = {}", openId, uuid);
-            return new Resp(false, 200, "An error occurred during confirmation", null);
+        // 先检查一下用户是否已经确认了,已经确认过则不进行操作
+        Boolean isMember = redisTemplate.opsForSet().isMember(uuid + CONFIRMED_SET, openId);
+        assert isMember != null;
+        if (isMember) {
+            return new Resp("success", null);
         }
+
+        // 判断是否一应有了必备的信息
+        String relation = relationDao.getFinalImage(uuid, openId);
+        if (relation == null) {
+            logger.error("在上传之前确认，非法操作！ uuid={} openId={}", uuid, openId);
+            return new Resp(false, 200, "还不能进行确认，因为未上传最终的照片！", null);
+        }
+        // 修改数据库,返回修改成功的数据条数
+        Integer confirmStatus = relationDao.confirmStatus(uuid, openId);
+
+        if (confirmStatus == 1) {
+            // 在 redis 中将对应的值加一
+            Long confirmed = redisTemplate.opsForValue().increment(uuid + CONFIRMED_CNT);
+
+            String total = redisTemplate.opsForValue().get(uuid + AdminServiceImpl.TOTAL_NUMBER_OF_PEOPLE);
+
+
+            // 判断一下是不是所有人都加入了,是的话就更新一下数据库中的状态
+            assert confirmed != null;
+            assert total != null;
+            if (confirmed.equals(Long.parseLong(total))) {
+                photoDao.changeStatus(uuid, AdminServiceImpl.CONFIRMED_FOR_RELEASE);
+            }
+            // 把这个用户添加到已确认的集合中去
+            redisTemplate.opsForSet().add(uuid + CONFIRMED_SET, openId);
+            return new Resp("success", null);
+        } else {
+            return new Resp(false, 200, "未知错误，请重试", null);
+        }
+
     }
 
     @Override
     public Object changeBasicInfo(String openId, String name, String uuid, String remarks) {
-        try {
 
-            // 修改之前先查询一下当前的状态，如果是已确认，则不允许修改
-            if (checkStatus(uuid, openId)) {
-                return new Resp(false, 200, "Currently users are not allowed to modify personal information", null);
-            }
-
-            return getObject(openId, name, uuid, remarks);
-
-        } catch (Exception e) {
-            logger.error("An error occurred while changing personal information openId = {} uuid = {}", openId, uuid);
-            return new Resp(false, 200, "An error occurred while changing personal information", null);
+        // 修改之前先查询一下当前的状态，如果是已确认，则不允许修改
+        if (checkStatus(uuid, openId)) {
+            return new Resp(false, 200, "确认后的信息不能修改！", null);
         }
+
+        return setInfo(openId, name, uuid, remarks);
+
     }
 
-    private Object getObject(String openId, String name, String uuid, String remarks) throws Exception {
-        int res;
-        res = getRes(openId, name, uuid, remarks);
+    private Object setInfo(String openId, String name, String uuid, String remarks) {
+        int res = getRes(openId, name, uuid, remarks);
 
         if (res == 1) {
             return new Resp("success", null);
         } else {
-            throw new Exception("");
+            return new Resp(false, 200, "未知错误！", null);
         }
     }
 
     private int getRes(String openId, String name, String uuid, String remarks) {
-        int res;
-        res = this.relationDao.addBasicInfo(openId, uuid, name, remarks);
-        return res;
+        return this.relationDao.addBasicInfo(openId, uuid, name, remarks);
     }
 
     @Override
     public Object addBasicInfo(String uuid, String openId, String remarks, String name) {
-
-        try {
-            return getObject(openId, name, uuid, remarks);
-        } catch (Exception e) {
-            logger.error("An error occurred while improving personal information openId = {} uuid = {}", openId, uuid);
-            return new Resp(false, 200, "An error occurred while improving personal information", null);
-        }
-
+        return setInfo(openId, name, uuid, remarks);
     }
 
     /**
@@ -287,41 +261,28 @@ public class UserServiceImpl implements UserService {
 
         // 修改之前先查询一下当前的状态，如果是已确认，则不允许修改
         if (checkStatus(uuid, openId)) {
-            return new Resp(false, 200, "Currently users are not allowed to modify personal information", null);
+            return new Resp(false, 200, "已经确认的图片不能再修改！", null);
         }
 
         String imgUrl;
 
-        try {
-            imgUrl = segService.seg(file);
-            // 提取失败
-            if (imgUrl == null) {
-                throw new Exception("seg exception");
-            }
-        } catch (Exception e) {
-            logger.error("An exception occurred in SEG API uuid = {} openId = {}", uuid, openId);
-            return new Resp(false, 200, "Baidu API exception", null);
-
+        imgUrl = segService.seg(file);
+        // 提取失败
+        if (imgUrl == null) {
+            return new Resp(false, 200, "matting 失败！ 请稍后重试", null);
         }
 
+        // 用户信息上传,将用户本地的图片和SEG人像同时存储到数据库中
+        Integer res = relationDao.uploadImage(uuid, openId, "", imgUrl);
 
-        try {
-            // 用户信息上传,将用户本地的图片和SEG人像同时存储到数据库中
-            Integer res = relationDao.uploadImage(uuid, openId, "", imgUrl);
-
-            if (res == 1) {
-                HashMap<String, String> map = new HashMap<>(1);
-                map.put("url", imgUrl);
-                return new Resp("success", map);
-            } else {
-                throw new Exception("");
-            }
-        } catch (Exception e) {
-            logger.error("Failed to write the image address to the database uuid = {} openId = {} ", uuid, openId);
+        if (res == 1) {
+            HashMap<String, String> map = new HashMap<>(1);
+            map.put("url", imgUrl);
+            return new Resp("success", map);
+        } else {
+            logger.error("写数据库失败！ uuid={} url={}", uuid, imgUrl);
             return new Resp(false, 200, "Failed to write the image address to the database", null);
-
         }
-
     }
 
 
@@ -352,7 +313,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public Object isJoined(String uuid, String openId) {
         Boolean isMember = redisTemplate.opsForSet().isMember(uuid + JOINED_SET, openId);
-        return new Resp(true, 200, "success", true);
+        return new Resp(true, 200, "success", isMember);
     }
 
     @Override
@@ -362,26 +323,29 @@ public class UserServiceImpl implements UserService {
             return new Resp(false, 200, "Currently users are not allowed to modify personal information", null);
         }
 
-        String name = UUID.randomUUID().toString();
+
+        String finalUrl;
         try {
-
-            String finalUrl = ImageSaveUtil.saveOnline(file);
-
-            Integer res = relationDao.uploadFinalImage(uuid, openId, finalUrl);
-
-            // 在集合中添加数据,注意如果是修改的话返回值会为0
-            redisTemplate.opsForSet().add(uuid + UPLOADED_SET, openId);
-
-            if (res == 1) {
-                return new Resp("success", null);
-            } else {
-                throw new Exception("");
-            }
-        } catch (Exception e) {
-            logger.error("There was a problem uploading. uuid={} opeId={} fileName={}", uuid, openId, file + ".jpeg");
+            finalUrl = ImageUploadUtil.saveOnline(file);
+        } catch (IOException e) {
             return new Resp(false, 200, "There was a problem while uploading", null);
-
         }
+
+        if (finalUrl == null) {
+            return new Resp(false, 200, "There was a problem while uploading", null);
+        }
+
+        Integer res = relationDao.uploadFinalImage(uuid, openId, finalUrl);
+
+        // 在集合中添加数据,注意如果是修改的话返回值会为0
+        redisTemplate.opsForSet().add(uuid + UPLOADED_SET, openId);
+
+        if (res == 1) {
+            return new Resp("success", null);
+        } else {
+            return new Resp(false, 200, "There was a problem while uploading", null);
+        }
+
     }
 
     /**
@@ -395,34 +359,30 @@ public class UserServiceImpl implements UserService {
 
         Integer status = relationDao.getStatusByUuidAndOpenId(uuid, openId);
 
-        return status.equals(CONFIRMED);
+        return CONFIRMED.equals(status);
     }
 
 
     @Override
     public Object getGroupPhoto(String uuid) {
-        try {
 
-            String photoLink = redisTemplate.opsForValue().get(uuid + FINAL_IMG);
-            if (photoLink == null) {
-                synchronized (this) {
-                    photoLink = photoDao.getFinalPhotoLink(uuid);
-                    if (photoLink == null) {
-                        return new Resp(false, 200, "making ...", null);
-                    } else {
-                        redisTemplate.opsForValue().set(uuid + FINAL_IMG, photoLink);
-                        return new Resp(true, 200, "success", photoLink);
-                    }
-
+        String photoLink = redisTemplate.opsForValue().get(uuid + FINAL_IMG);
+        if (photoLink == null) {
+            synchronized (this) {
+                photoLink = photoDao.getFinalPhotoLink(uuid);
+                if (photoLink == null) {
+                    return new Resp(false, 200, "making ...", null);
+                } else {
+                    redisTemplate.opsForValue().set(uuid + FINAL_IMG, photoLink);
+                    return new Resp(true, 200, "success", photoLink);
                 }
 
-            } else {
-                return new Resp(true, 200, "success", photoLink);
             }
 
-        } catch (Exception e) {
-            return new Resp(false, 200, "Please try again later.", null);
+        } else {
+            return new Resp(true, 200, "success", photoLink);
         }
+
     }
 
     @Override
@@ -434,7 +394,7 @@ public class UserServiceImpl implements UserService {
             return new Resp(false, 200, "Query photo does not exist", null);
         }
 
-        photo.setBackgroundImg("/graduation/" + photo.getBackgroundImg());
+        photo.setBackgroundImg(photo.getBackgroundImg());
 
 
         String confirmed = redisTemplate.opsForValue().get(uuid + CONFIRMED_CNT);
@@ -457,41 +417,35 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Resp joinSomeOne(String openId, String uuid) {
-        try {
 
-            Boolean isMember = redisTemplate.opsForSet().isMember(uuid + JOINED_SET, openId);
 
-            assert (isMember != null);
-            if (isMember) {
-                return new Resp(false, 200, "Already joined", null);
-            }
+        Boolean isMember = redisTemplate.opsForSet().isMember(uuid + JOINED_SET, openId);
 
-            // 在数据库中添加相应的数据
-            int res = this.relationDao.addRelation(openId, uuid);
-
-            if (res == 1) {
-
-                // 将redis的值自增,表示当前加入合照的人数加一
-                Long increment = redisTemplate.opsForValue().increment(uuid + JOINED_CNT);
-
-                // 将当前的用户加入到 “已加入” 的集合中
-                redisTemplate.opsForSet().add(uuid + JOINED_SET, openId);
-
-                if (increment != null) {
-                    return new Resp("success", null);
-                } else {
-                    throw new Exception("");
-                }
-            } else {
-                throw new Exception("");
-            }
-        } catch (Exception e) {
-            logger.error("An error occurred while adding a relationship. openId = {} uuid = {}", openId, uuid);
-            return new Resp(false, 200, "", null);
-
+        assert (isMember != null);
+        if (isMember) {
+            return new Resp(false, 200, "Already joined", null);
         }
 
+        // 在数据库中添加相应的数据
+        int res = this.relationDao.addRelation(openId, uuid);
+
+        if (res == 1) {
+
+            // 将redis的值自增,表示当前加入合照的人数加一
+            Long increment = redisTemplate.opsForValue().increment(uuid + JOINED_CNT);
+
+            // 将当前的用户加入到 “已加入” 的集合中
+            redisTemplate.opsForSet().add(uuid + JOINED_SET, openId);
+
+            if (increment != null) {
+                return new Resp("success", null);
+            } else {
+                return new Resp(false, 200, "", null);
+            }
+        } else {
+            return new Resp(false, 200, "", null);
+        }
     }
-
-
 }
+
+

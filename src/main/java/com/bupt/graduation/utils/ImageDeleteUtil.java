@@ -20,7 +20,6 @@ public class ImageDeleteUtil {
 
     private final static String BASE_DIR = System.getProperties().getProperty("user.dir") + "/IMG/";
 
-
     private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(
             1,
             Runtime.getRuntime().availableProcessors() * 2,

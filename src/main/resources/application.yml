@@ -1,17 +1,14 @@
 spring:
   application:
     name: graduation
-  cloud:
-    kubernetes:
-      config:
-        name: graduation-config-map
+
   redis:
-    host: localhost
+    host: redis-service
     port: 6379
   datasource:
-    username: root
-    password: root
-    url: jdbc:mysql://127.0.0.1:3306/graduation?useSSL=false&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    url: jdbc:mysql://mysql-service:3306/${MYSQL_DATABASE}?useSSL=false&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.mysql.cj.jdbc.MysqlConnectionPoolDataSource
   aop:
@@ -22,10 +19,7 @@ spring:
       max-request-size: 10MB
 server:
   port: 8888
-#logging:
-#  file:
-#    name: graduation.log
+
 segService:
-  url: http://localhost:5000/matting
-  upload-path: http://localhost:5000/upload
+  url: http://modnet-service:5000/matting
   timeout: 60
