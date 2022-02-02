@@ -22,11 +22,7 @@ public class ImageDownLoadUtil {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10; i++) {
-            long start = System.currentTimeMillis();
-            downImages("./test.jpg", "https://www.bupt.site/image/1643708811.5312743.jpg");
-            System.out.println(System.currentTimeMillis() - start);
-        }
+        Integer a = 1;
 
     }
 }

@@ -85,6 +85,6 @@ public interface PhotoDao extends BaseMapper<Photo> {
     @Select("select  status from graduation.photo where photo_id=#{uuid}")
     Integer getStatus(String uuid);
 
-    @Select("select COUNT(*)  graduation.photo where photo_id=#{uuid}")
+    @Select("select COUNT(*) from  graduation.photo where photo_id=#{uuid}")
     Integer getCount(String uuid);
 }
