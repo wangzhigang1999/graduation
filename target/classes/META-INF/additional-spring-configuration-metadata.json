@@ -1,0 +1,19 @@
+{
+  "properties": [
+    {
+      "name": "segService.url",
+      "type": "java.lang.String",
+      "description": "Description for segService.url."
+    },
+    {
+      "name": "segService.upload-path",
+      "type": "java.lang.String",
+      "description": "Description for segService.upload-path."
+    },
+    {
+      "name": "segService.timeout",
+      "type": "java.lang.Integer",
+      "description": "nothing."
+    }
+  ]
+}

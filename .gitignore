@@ -3,3 +3,6 @@
 ./idea
 ./vscode
 
+target/classes/com/bupt/graduation/aspect/LoggerAspect.class
+target/classes/com/bupt/graduation/service/impl/UserServiceImpl.class
+target/classes/com/bupt/graduation/service/impl/AdminServiceImpl.class

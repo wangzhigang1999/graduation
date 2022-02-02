@@ -1,0 +1,21 @@
+{
+  "groups": [],
+  "properties": [
+    {
+      "name": "segService.timeout",
+      "type": "java.lang.Integer",
+      "description": "nothing."
+    },
+    {
+      "name": "segService.upload-path",
+      "type": "java.lang.String",
+      "description": "Description for segService.upload-path."
+    },
+    {
+      "name": "segService.url",
+      "type": "java.lang.String",
+      "description": "Description for segService.url."
+    }
+  ],
+  "hints": []
+}
