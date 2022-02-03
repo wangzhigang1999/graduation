@@ -1,6 +1,6 @@
 # Graduation
 
-![未命名文件](readme.assets/%E6%9C%AA%E5%91%BD%E5%90%8D%E6%96%87%E4%BB%B6.png)
+![arch](readme.assets/arch.png)
 
 ## Run in K8S
 
