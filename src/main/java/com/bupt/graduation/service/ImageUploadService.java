@@ -1,10 +1,11 @@
 package com.bupt.graduation.service;
 
+import com.bupt.graduation.entity.Resp;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @author wanz
  */
 public interface ImageUploadService {
-    Object upload(String uuid, MultipartFile file);
+    Resp upload(String uuid, MultipartFile file);
 }

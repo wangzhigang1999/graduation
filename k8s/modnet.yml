@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: modnet
 spec:
+  replicas: 4
   selector:
     matchLabels:
       app: modnet

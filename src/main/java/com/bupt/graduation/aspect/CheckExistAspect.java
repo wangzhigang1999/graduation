@@ -19,33 +19,33 @@ import java.util.Map;
 @Component
 @Aspect
 public class CheckExistAspect {
-//    final PhotoDao photos;
-//
-//    public CheckExistAspect(PhotoDao photos) {
-//        this.photos = photos;
-//    }
+    final PhotoDao photos;
 
-//    @Pointcut("@annotation(com.bupt.graduation.annotation.ExistCheck)")
-//    public void existsCheck() {
-//    }
+    public CheckExistAspect(PhotoDao photos) {
+        this.photos = photos;
+    }
+
+    @Pointcut("@annotation(com.bupt.graduation.annotation.ExistCheck)")
+    public void existsCheck() {
+    }
 
 
-//    @Around("existsCheck()")
-//    public Object beforeLog(ProceedingJoinPoint joinPoint) throws Throwable {
-//        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-//        assert attributes != null;
-//        HttpServletRequest request = attributes.getRequest();
-//        Map<String, String[]> parameterMap = request.getParameterMap();
-//        String uuid = parameterMap.get("uuid")[0];
-//
-//        // 去查对应的合照，不存在会抛出异常
-//        Integer count = photos.getCount(uuid);
-//        if (count <= 0) {
-//            return new Resp(false, 200, "the photo does not exists.", null);
-//        }
-//        return joinPoint.proceed();
-//
-//
-//    }
+    @Around("existsCheck()")
+    public Object beforeLog(ProceedingJoinPoint joinPoint) throws Throwable {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        assert attributes != null;
+        HttpServletRequest request = attributes.getRequest();
+        Map<String, String[]> parameterMap = request.getParameterMap();
+        String uuid = parameterMap.get("uuid")[0];
+
+        // 去查对应的合照，不存在会抛出异常
+        Integer count = photos.getCount(uuid);
+        if (count <= 0) {
+            return new Resp(false, 200, "the photo does not exists.", null);
+        }
+        return joinPoint.proceed();
+
+
+    }
 
 }

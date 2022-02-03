@@ -18,6 +18,14 @@ spring:
       max-request-size: 10MB
 server:
   port: 8888
+  compression:
+    enabled: true
+    mime-types: application/json
+  tomcat:
+    #最大链接数
+    max-connections: 20000
+    #最大等待队列长度
+    accept-count: 1000
 
 segService:
   url: http://192.168.150.178:5000/matting

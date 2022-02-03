@@ -39,7 +39,6 @@ public interface AdminService {
      * @param otherInfo  其他的一些信息
      * @return res
      */
-    @ExistCheck
     Object changeBasicInfo(String uuid, String imgName, String schoolName, String className, String otherInfo);
 
 
@@ -49,7 +48,6 @@ public interface AdminService {
      * @param uuid uuid
      * @return res
      */
-    @ExistCheck
     Object getOrder(String uuid);
 
     /**
@@ -59,7 +57,6 @@ public interface AdminService {
      * @param uuid uuid
      * @return res
      */
-    @ExistCheck
     Object uploadBackgroundImg(String uuid, MultipartFile file);
 
 
@@ -70,7 +67,7 @@ public interface AdminService {
      * @param uuid uuid
      * @return res
      */
-    @ExistCheck
+
     Object changeBackgroundImg(String uuid, MultipartFile file);
 
 
@@ -81,7 +78,6 @@ public interface AdminService {
      * @param openId   openId
      * @param position position
      */
-    @ExistCheck
     void changePeopleOrder(String uuid, String openId, int position);
 
 
@@ -92,7 +88,6 @@ public interface AdminService {
      * @param orders 所有用户的顺序的数组
      * @return res
      */
-    @ExistCheck
     Object changePeopleOrder(String uuid, String orders);
 
     /**
@@ -101,7 +96,6 @@ public interface AdminService {
      * @param uuid uuid
      * @return res
      */
-    @ExistCheck
     Object generate(String uuid);
 
     /**
@@ -110,7 +104,6 @@ public interface AdminService {
      * @param uuid uuid
      * @return res
      */
-    @ExistCheck
     Object isConfirmComplete(String uuid);
 
     /**
@@ -119,6 +112,5 @@ public interface AdminService {
      * @param uuid uuid
      * @return res
      */
-    @ExistCheck
     Object releaseConfirm(String uuid);
 }

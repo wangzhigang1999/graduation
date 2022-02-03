@@ -28,29 +28,30 @@ public class ImageUploadUtil {
     public static ThreadPoolExecutor pool = new ThreadPoolExecutor(1, Runtime.getRuntime().availableProcessors() * 2, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), Executors.defaultThreadFactory(), new ThreadPoolExecutor.CallerRunsPolicy());
 
     static {
+        System.out.println(pool.getPoolSize());
         MakeDirUtil.mkDir(BG_PATH);
         Map<String, String> map = System.getenv();
         UPLOAD_TARGET = map.get("HTTP_UPLOAD_PATH");
     }
 
     public static String saveOnline(MultipartFile file) throws IOException {
-        return postFileRequest(UPLOAD_TARGET, file.getInputStream());
+        return postFileRequest(file.getInputStream());
     }
 
     public static String saveOnline(InputStream file) {
-        return postFileRequest(UPLOAD_TARGET, file);
+        return postFileRequest(file);
     }
 
-    private static String postFileRequest(String url, InputStream fis) {
+    private static String postFileRequest(InputStream fis) {
         try {
-            logger.info("connect url {}", url);
-            Connection conn = Jsoup.connect(url);
+            logger.info("connect url {}", ImageUploadUtil.UPLOAD_TARGET);
+            Connection conn = Jsoup.connect(ImageUploadUtil.UPLOAD_TARGET);
             conn.data("file", "file", fis);
             Connection.Response response = conn.method(Connection.Method.POST).execute();
             Map map = new Gson().fromJson(response.body(), Map.class);
             return (String) map.get("fileName");
         } catch (Exception e) {
-            logger.error("上传文件失败 url:{}", url);
+            logger.error("上传文件失败 url:{}", ImageUploadUtil.UPLOAD_TARGET);
             return null;
         }
 

@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: graduation-backend
 spec:
+  replicas: 4
   selector:
     matchLabels:
       app: graduation-backend

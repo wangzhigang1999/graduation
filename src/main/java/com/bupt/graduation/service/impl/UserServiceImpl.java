@@ -6,7 +6,7 @@ import com.bupt.graduation.dao.PhotoUserRelationDao;
 import com.bupt.graduation.entity.Photo;
 import com.bupt.graduation.entity.PhotoUserRelation;
 import com.bupt.graduation.entity.Resp;
-import com.bupt.graduation.service.ImageSegService;
+import com.bupt.graduation.service.ImageMattingService;
 import com.bupt.graduation.service.UserService;
 import com.bupt.graduation.utils.ImageUploadUtil;
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ public class UserServiceImpl implements UserService {
     private final PhotoUserRelationDao relationDao;
     private final PhotoDao photoDao;
 
-    final ImageSegService segService;
+    final ImageMattingService segService;
 
     private final RedisTemplate<String, String> redisTemplate;
     private final static Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
     final static String UPLOADED_SET = "_UPLOADED_SET";
     final static String JOINED_SET = "_JOINED_SET";
 
-    public UserServiceImpl(PhotoUserRelationDao relationDao, PhotoDao photoDao, RedisTemplate<String, String> redisTemplate, @Qualifier("modnet") ImageSegService segService) {
+    public UserServiceImpl(PhotoUserRelationDao relationDao, PhotoDao photoDao, RedisTemplate<String, String> redisTemplate, @Qualifier("modnet") ImageMattingService segService) {
         this.relationDao = relationDao;
         this.photoDao = photoDao;
         this.redisTemplate = redisTemplate;
@@ -190,7 +190,7 @@ public class UserServiceImpl implements UserService {
             return new Resp("success", null);
         }
 
-        // 判断是否一应有了必备的信息
+        // 判断是否已经有了必备的信息
         String relation = relationDao.getFinalImage(uuid, openId);
         if (relation == null) {
             logger.error("在上传之前确认，非法操作！ uuid={} openId={}", uuid, openId);
@@ -266,7 +266,7 @@ public class UserServiceImpl implements UserService {
 
         String imgUrl;
 
-        imgUrl = segService.seg(file);
+        imgUrl = segService.matting(file);
         // 提取失败
         if (imgUrl == null) {
             return new Resp(false, 200, "matting 失败！ 请稍后重试", null);

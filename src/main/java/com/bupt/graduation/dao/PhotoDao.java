@@ -39,7 +39,7 @@ public interface PhotoDao extends BaseMapper<Photo> {
      * @param otherInfo     其他的一些信息
      * @return res
      */
-    @Insert("insert into graduation.photo (photo_id, school_name, class_number, student_number,\n" + "                              image_name, creator_open_id, create_date, other_info)\n" + "VALUES (#{uuid}, #{schoolName}, #{className}, #{studentNumber}, #{imgName}, #{openId}, now(), #{otherInfo})")
+    @Insert("insert into graduation.photo (photo_id, school_name, class_number, student_number,\n" + " image_name, creator_open_id, create_date, other_info)\n" + "VALUES (#{uuid}, #{schoolName}, #{className}, #{studentNumber}, #{imgName}, #{openId}, now(), #{otherInfo})")
     Integer createBasicInfo(String uuid, String imgName, String schoolName, String className, Integer studentNumber, String otherInfo, String openId);
 
     /**
@@ -85,6 +85,6 @@ public interface PhotoDao extends BaseMapper<Photo> {
     @Select("select  status from graduation.photo where photo_id=#{uuid}")
     Integer getStatus(String uuid);
 
-    @Select("select COUNT(*) from  graduation.photo where photo_id=#{uuid}")
+    @Select("select COUNT(photo_id) from  graduation.photo where photo_id=#{uuid}")
     Integer getCount(String uuid);
 }

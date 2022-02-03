@@ -6,20 +6,22 @@ import com.bupt.graduation.service.ImageUploadService;
 import com.bupt.graduation.utils.ImageUploadUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 @Service("remote")
-public class RemoteUploadServiceImpl implements ImageUploadService {
-    @Autowired
-    PhotoDao photoDao;
+public class UploadServiceImpl implements ImageUploadService {
+    final PhotoDao photoDao;
     private static final Logger logger = LoggerFactory.getLogger(ImageUploadUtil.class);
 
+    public UploadServiceImpl(PhotoDao photoDao) {
+        this.photoDao = photoDao;
+    }
+
     @Override
-    public Object upload(String uuid, MultipartFile file) {
+    public Resp upload(String uuid, MultipartFile file) {
 
 
         if (file == null) {

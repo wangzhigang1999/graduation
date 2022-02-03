@@ -1,6 +1,6 @@
 package com.bupt.graduation.service.impl;
 
-import com.bupt.graduation.service.ImageSegService;
+import com.bupt.graduation.service.ImageMattingService;
 import com.bupt.graduation.utils.ImageUploadUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.util.UUID;
 
 @Service("modnet")
-public class LocalImageSegServiceImpl implements ImageSegService {
+public class ImageMattingServiceImpl implements ImageMattingService {
     @Value("${segService.timeout}")
     public int DEFAULT_TIME_OUT;
     @Value("${segService.url}")
@@ -24,7 +24,7 @@ public class LocalImageSegServiceImpl implements ImageSegService {
     private static final Logger logger = LoggerFactory.getLogger(ImageUploadUtil.class);
 
     @Override
-    public String seg(MultipartFile file) {
+    public String matting(MultipartFile file) {
         try {
             return doPostFileRequest(URL, file.getInputStream());
         } catch (IOException e) {
