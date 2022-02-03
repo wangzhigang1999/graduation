@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: modnet
-          image: bupt2018/graduation-backend:8.0
+          image: bupt2018/graduation-backend:11.0
           resources:
             limits:
               memory: "1024Mi"
