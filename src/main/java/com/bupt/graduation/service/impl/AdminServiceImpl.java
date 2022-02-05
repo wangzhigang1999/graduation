@@ -8,8 +8,10 @@ import com.bupt.graduation.entity.Resp;
 import com.bupt.graduation.service.AdminService;
 import com.bupt.graduation.service.ImageUploadService;
 import com.bupt.graduation.service.UserService;
-import com.bupt.graduation.utils.ImageCompositingUtil;
-import com.bupt.graduation.utils.ImageDownLoadUtil;
+import com.bupt.graduation.utils.Config;
+import com.bupt.graduation.utils.ImageConcatUtil;
+import com.bupt.graduation.utils.MultiThreadDownloadUtil;
+import com.bupt.graduation.utils.SimpleDownLoadUtil;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,11 +20,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -48,7 +47,7 @@ public class AdminServiceImpl implements AdminService {
     /**
      * 默认的图片目录
      */
-    final static String BASE_DIR = System.getProperties().getProperty("user.dir") + "/IMG/";
+    final static String BASE_DIR = Config.BASE_DIR;
 
     /**
      * 已确认待发布.
@@ -215,21 +214,29 @@ public class AdminServiceImpl implements AdminService {
         }
 
         list.sort(Comparator.comparingInt(Pair::getValue));
+
         // 将排好顺序的人的图片链接写入一个数组中
-        String[] img = new String[list.size()];
+        String[] ossImageLink = new String[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            ossImageLink[i] = list.get(i).getKey();
+        }
 
-        //数组的索引
-        AtomicInteger index = new AtomicInteger();
+        String[] localImage = new String[list.size()];
 
-        // todo 用多线程优化这一部分
-        list.forEach(o -> {
-            UUID uid = UUID.randomUUID();
-            String savePath = BASE_DIR + uid + ".jpg";
-            ImageDownLoadUtil.downImages(savePath, o.getKey());
-            img[index.getAndIncrement()] = (savePath);
-        });
+        // 首先使用多线程下载，如果多线程下载失败，用单线程兜底
+        try {
+            localImage = MultiThreadDownloadUtil.download(ossImageLink);
+        } catch (InterruptedException | ExecutionException e) {
 
-        String imageLink = ImageCompositingUtil.overlapImage(img);
+            for (int i = 0; i < ossImageLink.length; i++) {
+                UUID uid = UUID.randomUUID();
+                String savePath = BASE_DIR + uid + ".jpg";
+                localImage[i] = (savePath);
+                SimpleDownLoadUtil.download(savePath, ossImageLink[i]);
+            }
+        }
+
+        String imageLink = ImageConcatUtil.concat(localImage);
 
         if (imageLink == null) {
             logger.error("合成图片失败！ uuid={}", uuid);

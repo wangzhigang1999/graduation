@@ -50,7 +50,6 @@ public interface UserService {
      * @param name    name
      * @return res
      */
-    @ExistCheck
     Object addBasicInfo(String uuid, String openId, String remarks, String name);
 
 

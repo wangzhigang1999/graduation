@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
     final static String UPLOADED_SET = "_UPLOADED_SET";
     final static String JOINED_SET = "_JOINED_SET";
 
-    public UserServiceImpl(PhotoUserRelationDao relationDao, PhotoDao photoDao, RedisTemplate<String, String> redisTemplate, @Qualifier("modnet") ImageMattingService segService) {
+    public UserServiceImpl(PhotoUserRelationDao relationDao, PhotoDao photoDao, RedisTemplate<String, String> redisTemplate, @Qualifier("mod-net") ImageMattingService segService) {
         this.relationDao = relationDao;
         this.photoDao = photoDao;
         this.redisTemplate = redisTemplate;

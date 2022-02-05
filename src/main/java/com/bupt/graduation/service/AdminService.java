@@ -1,9 +1,6 @@
 package com.bupt.graduation.service;
 
-import com.bupt.graduation.annotation.ExistCheck;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 /**
  * (Photo)表服务接口

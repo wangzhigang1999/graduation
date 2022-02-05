@@ -18,20 +18,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class ImageDeleteUtil {
 
-    private final static String BASE_DIR = System.getProperties().getProperty("user.dir") + "/IMG/";
+    private final static String BASE_DIR = Config.BASE_DIR;
 
-    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(
-            1,
-            Runtime.getRuntime().availableProcessors() * 2,
-            30,
-            TimeUnit.SECONDS,
-            new LinkedBlockingDeque<>(),
-            Executors.defaultThreadFactory(),
-            new ThreadPoolExecutor.CallerRunsPolicy());
+    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(1, Runtime.getRuntime().availableProcessors() * 2, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), Executors.defaultThreadFactory(), new ThreadPoolExecutor.CallerRunsPolicy());
 
     public static void delete(Set<String> images) {
-        POOL_EXECUTOR.submit(() -> add(images)
-        );
+        POOL_EXECUTOR.submit(() -> add(images));
     }
 
     private static void add(Set<String> images) {

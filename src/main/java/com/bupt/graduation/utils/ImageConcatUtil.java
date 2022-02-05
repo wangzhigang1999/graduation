@@ -14,7 +14,7 @@ import java.util.HashMap;
  *
  * @author wangz
  */
-public class ImageCompositingUtil {
+public class ImageConcatUtil {
 
 
     /**
@@ -38,7 +38,7 @@ public class ImageCompositingUtil {
      * @param inputImg 输入的带合成的图片的数组
      * @return 合成后的图片的名称
      */
-    public static String overlapImage(String[] inputImg) {
+    public static String concat(String[] inputImg) {
         try {
 
             int length = inputImg.length;

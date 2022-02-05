@@ -1,8 +1,5 @@
 package com.bupt.graduation.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 
 /**
@@ -12,8 +9,6 @@ import java.io.File;
  */
 public class MakeDirUtil {
 
-    final static Logger logger = LoggerFactory.getLogger(MakeDirUtil.class);
-
     public static void mkDir(String path) {
 
         File file;
@@ -21,14 +16,9 @@ public class MakeDirUtil {
             file = new File(path);
             if (!file.exists()) {
                 boolean res = file.mkdirs();
-                if (res) {
-                    logger.info("创建目录 {} 成功", path);
-                }
-            } else {
-                logger.info("目录 {} 存在", path);
+                System.out.println(res);
             }
         } catch (Exception ignored) {
-            logger.info("创建目录 {} 发生错误", path);
         }
     }
 
