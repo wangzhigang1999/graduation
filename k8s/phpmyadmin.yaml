@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: phpmyadmin-deployment
+  namespace: kube-system
   labels:
     app: phpmyadmin
 spec:
@@ -35,6 +36,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
+  namespace: kube-system
   name: php-service
 spec:
   selector:
